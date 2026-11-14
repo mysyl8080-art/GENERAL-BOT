@@ -135,8 +135,7 @@ async def gold(m:Message):
 
 @router.message(Command('prayer'))
 async def prayer(m:Message):
-    city=(m.text or '').partition(' ')[2].strip()
-    if not city: return await m.answer('استخدم: /prayer القاهرة أو /prayer Cairo')
+    city=(m.text or '').partition(' ')[2].strip() or 'القاهرة'
     try:
         r=requests.get('https://api.aladhan.com/v1/timingsByCity',params={'city':city,'country':'Egypt','method':5},timeout=15); r.raise_for_status(); d=r.json()['data']['timings']
         names=['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha']; trans={'Fajr':'الفجر','Sunrise':'الشروق','Dhuhr':'الظهر','Asr':'العصر','Maghrib':'المغرب','Isha':'العشاء'}
