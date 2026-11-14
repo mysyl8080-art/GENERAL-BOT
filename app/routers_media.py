@@ -10,26 +10,93 @@ from app.services.common import get_ai_reply
 
 router=Router()
 STAGED:dict[tuple[int,str],list[str]]={}
-HELP='''أرسل الملف مع تعليق يبدأ بـ /convert ثم نوع التحويل.
+HELP='''📂 تحويل الملفات — اختار رقم وبس!
 
-أمثلة:
-• /convert pdf-to-docx | /convert docx-to-pdf | /convert pdf-to-xlsx | /convert pdf-to-pptx
-• /convert pdf-to-txt | /convert pdf-to-images | /convert pdf-split 1-3
-• /convert pdf-compress | /convert pdf-rotate 90 | /convert pdf-protect كلمة | /convert pdf-unlock كلمة
-• /convert pdf-reorder 3,1,2 | /convert pdf-watermark نص | /convert pdf-page-numbers | /convert pdf-ocr
-• /convert docx-to-txt | /convert txt-to-docx | /convert docx-to-html | /convert html-to-docx | /convert docx-to-md | /convert md-to-docx | /convert docx-to-pptx | /convert pptx-to-docx
-• /convert xlsx-to-csv | /convert csv-to-xlsx | /convert xlsx-to-json | /convert json-to-xlsx | /convert csv-to-json | /convert json-to-csv
-• /convert image-to-pdf | /convert image-to-jpg | /convert image-to-png | /convert image-to-webp
-• /convert image-resize 800x600 | /convert image-compress | /convert image-sticker | /convert image-bg | /convert ocr
-• /convert video-to-mp3 | /convert video-to-gif | /convert video-compress | /convert video-cut 00:00:10|20s
-• /convert audio-to-mp3 | /convert audio-to-wav | /convert audio-to-ogg | /convert epub-to-pdf
-• /convert unzip (ZIP/RAR/7z) | /convert zip (يرشف الملف المرسل)
-• /archive add (على كل ملف) ثم /archive create لإنشاء ZIP من عدة ملفات.
-• /pdfmerge add (على كل PDF) ثم /pdfmerge create لدمج عدة ملفات PDF.
-• /convert pdf-to-epub | /convert epub-to-pdf
+طريقة الاستخدام:
+1) اختار رقم التحويل من القائمة.
+2) ابعت الملف للبوت كـ «ملف / Document».
+3) في تعليق الملف اكتب: /convert رقم العملية
+4) استلم الملف بعد التحويل.
 
-لتحويل Office إلى PDF: docx-to-pdf أو xlsx-to-pdf أو pptx-to-pdf. لمحوّل Word ⇄ PowerPoint استخدم docx-to-pptx أو pptx-to-docx.
-حد الملف الافتراضي {limit}MB. بعض التحويلات تحتاج LibreOffice/FFmpeg/Tesseract المثبتة في صورة Railway.'''
+📄 ملفات PDF وWord:
+1- PDF إلى Word
+2- Word إلى PDF
+3- PDF إلى نص
+4- ضغط PDF وتقليل حجمه
+5- صور إلى PDF
+6- PDF إلى صور
+7- تقسيم PDF (مثال: /convert 7 1-3)
+8- تدوير صفحات PDF (مثال: /convert 8 90)
+9- حماية PDF بكلمة مرور (مثال: /convert 9 كلمةالمرور)
+10- فك حماية PDF (مثال: /convert 10 كلمةالمرور)
+11- إضافة أرقام الصفحات
+12- إضافة علامة مائية (مثال: /convert 12 سري)
+13- PDF إلى Excel
+14- PDF إلى PowerPoint
+15- PDF إلى EPUB
+16- EPUB إلى PDF
+
+📝 ملفات Word وExcel:
+17- Word إلى نص
+18- نص إلى Word
+19- Word إلى HTML
+20- Word إلى Markdown
+21- Word إلى PowerPoint
+22- PowerPoint إلى Word
+23- Excel إلى CSV
+24- CSV إلى Excel
+25- Excel إلى JSON
+26- JSON إلى Excel
+27- CSV إلى JSON
+28- JSON إلى CSV
+
+🖼 الصور:
+29- صورة إلى JPG
+30- صورة إلى PNG
+31- صورة إلى WebP
+32- تصغير أبعاد الصورة (مثال: /convert 32 800x600)
+33- ضغط الصورة
+34- استخراج الكلام من صورة (OCR)
+
+🎬 الفيديو والصوت:
+35- فيديو إلى MP3
+36- فيديو إلى GIF
+37- ضغط الفيديو
+38- قص الفيديو (مثال: /convert 38 00:00:10|20s)
+39- صوت إلى MP3
+40- صوت إلى WAV
+41- صوت إلى OGG
+
+🗜 ملفات مضغوطة:
+42- فك ضغط ZIP أو RAR أو 7z
+43- ضغط الملف في ZIP
+
+📚 عمليات إضافية:
+44- دمج ملفات PDF: ابعت كل PDF بالتعليق /pdfmerge add ثم اكتب /pdfmerge create.
+45- جمع عدة ملفات في ZIP: ابعت كل ملف بالتعليق /archive add ثم اكتب /archive create.
+
+💡 أمثلة سهلة:
+• لتحويل PDF إلى Word: ابعت ملف PDF واكتب في التعليق /convert 1
+• لتحويل Word إلى PDF: ابعت ملف Word واكتب /convert 2
+• لضغط PDF: ابعت الملف واكتب /convert 4
+
+الحد الأقصى لحجم الملف: {limit}MB.
+لو ظهر لك خطأ، ابعت رسالة الخطأ كما هي.'''
+
+# أرقام التحويلات — الأرقام الظاهرة للمستخدم تقابل عمليات التحويل الفعلية.
+CONVERT_OPTIONS={
+ 1:('pdf-docx',''), 2:('office-pdf',''), 3:('pdf-txt',''), 4:('pdf-compress',''),
+ 5:('image-pdf',''), 6:('pdf-images',''), 7:('pdf-split',''), 8:('pdf-rotate',''),
+ 9:('pdf-protect',''), 10:('pdf-unlock',''), 11:('pdf-page-numbers',''), 12:('pdf-watermark',''),
+ 13:('pdf-xlsx',''), 14:('pdf-pptx',''), 15:('pdf-epub',''), 16:('epub-pdf',''),
+ 17:('docx-txt',''), 18:('text-docx',''), 19:('docx-html',''), 20:('docx-md',''),
+ 21:('docx-pptx',''), 22:('pptx-docx',''), 23:('xlsx-csv',''), 24:('csv-xlsx',''),
+ 25:('xlsx-json',''), 26:('json-xlsx',''), 27:('csv-json',''), 28:('json-csv',''),
+ 29:('image-jpg',''), 30:('image-png',''), 31:('image-webp',''), 32:('image-resize',''),
+ 33:('image-compress',''), 34:('ocr',''), 35:('video-mp3',''), 36:('video-gif',''),
+ 37:('video-compress',''), 38:('video-cut',''), 39:('audio-mp3',''), 40:('audio-wav',''),
+ 41:('audio-ogg',''), 42:('archive-unpack',''), 43:('archive-pack','')
+}
 
 @router.message(Command('convert'))
 async def convert_help(m:Message):
@@ -133,6 +200,16 @@ async def document_tools(m:Message,bot):
     raw=caption.partition(' ')[2].strip()
     if not raw: return await m.answer(HELP.format(limit=settings.max_upload_mb))
     op,*rest=raw.split(' ',1); extra=rest[0].strip() if rest else ''
+    # يقبل رقم العملية بدل الاسم الطويل، مع إبقاء الاسم القديم متاحًا.
+    if op.isdigit():
+        option=CONVERT_OPTIONS.get(int(op))
+        if not option:
+            return await m.answer('رقم التحويل غير موجود. اكتب /convert لعرض الأرقام المتاحة.')
+        op=option[0]
+        if op in ('pdf-split','pdf-rotate','pdf-protect','pdf-unlock','pdf-watermark','image-resize','video-cut') and not extra:
+            examples={'pdf-split':'1-3','pdf-rotate':'90','pdf-protect':'كلمةالمرور','pdf-unlock':'كلمةالمرور','pdf-watermark':'نص العلامة','image-resize':'800x600','video-cut':'00:00:10|20s'}
+            return await m.answer('تمام! ابعت الملف مرة تانية واكتب في التعليق:\n/convert '+str(int(raw.split()[0]))+' '+examples[op])
+
     if '|' in extra and op not in ('video-cut',): extra=extra.split('|',1)[0].strip() if op=='video-cut' else extra
     size=m.document.file_size or 0
     if size>settings.max_upload_mb*1024*1024: return await m.answer(f'حجم الملف أكبر من الحد ({settings.max_upload_mb}MB).')
