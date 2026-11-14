@@ -53,11 +53,6 @@ async def category(c:CallbackQuery):
 async def command_help(c:CallbackQuery):
     cmd=c.data.split(':',1)[1]
     from app.help_text import COMMAND_HELP
-    description=COMMAND_HELP.get(cmd)
-    if description:
-        await c.answer()
-        await c.message.answer(description,disable_web_page_preview=True)
-        return
     # Execute read-only / no-argument actions directly from the menu.
     try:
         if cmd=='adhkar':
@@ -89,6 +84,11 @@ async def command_help(c:CallbackQuery):
     except Exception as e:
         log.exception('Menu quick action failed: %s',cmd)
         await c.answer('حصل خطأ أثناء تنفيذ الخدمة. حاول مرة أخرى.',show_alert=True)
+        return
+    description=COMMAND_HELP.get(cmd)
+    if description:
+        await c.answer()
+        await c.message.answer(description,disable_web_page_preview=True)
         return
     help_map={
       'remind':'/remind بعد ساعتين | نص التذكير','repeat':'/repeat daily 09:00 | نص أو /repeat weekly fri 17:00 | نص','daily_summary':'/daily_summary 20:00 (خاص) أو /daily_summary off','shopping':'/shopping add حليب؛ /shopping list أو /shopping done رقم','meet_poll':'/meet_poll اختروا الموعد | السبت 10:00 | الأحد 15:00','event':'/event 2026-12-01 18:00 | اسم المناسبة؛ /event list','habit_add':'/habit_add اسم العادة، ثم /habit_done اسمها','habits':'/habits لمتابعة العادات','task':'/task نص المهمة أو /task done رقم','tasks':'/tasks','note':'/note نص أو /note list',
