@@ -64,8 +64,8 @@ async def command_help(c:CallbackQuery):
     # Execute read-only / no-argument actions directly from the menu.
     try:
         if cmd=='adhkar':
-            from app.routers_ai_tools import ADHKAR
-            await c.message.answer('ذكر اليوم: '+random.choice(ADHKAR)); await c.answer(); return
+            adhkar_items=['سبحان الله وبحمده، سبحان الله العظيم.','أستغفر الله وأتوب إليه.','اللهم صل وسلم على نبينا محمد.','لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير.','حسبي الله لا إله إلا هو عليه توكلت وهو رب العرش العظيم.']
+            await c.message.answer('ذكر اليوم: '+random.choice(adhkar_items)); await c.answer(); return
         if cmd=='joke':
             await c.message.answer(random.choice(JOKES)); await c.answer(); return
         if cmd=='quote':
