@@ -233,7 +233,7 @@ COMMAND_HELP.update({
 "qr":"🔳 اعمل كود QR لنص أو رابط: /qr https://example.com",
 "short":"🔗 اختصر رابطًا طويلًا: /short https://example.com",
 "price_alert":"🔔 أنشئ تنبيهًا عندما يصل السعر لهدف معين: /price_alert رابط | 100",
-"convert":"📂 حوّل ملفًا: ابعت الملف كمستند، واكتب في وصفه /convert pdf-to-docx\nاكتب /convert وحده لعرض التحويلات المتاحة.",
+"convert":"📂 تحويل الملفات بالأرقام! اكتب /convert لعرض القائمة، اختار رقم التحويل، وبعدها ابعت الملف كـ Document واكتب في التعليق /convert رقم. مثال: PDF إلى Word = /convert 1، وWord إلى PDF = /convert 2.",
 "convert image-to-jpg":"🖼 ابعت الصورة واكتب في وصفها /convert image-to-jpg لتحويلها إلى JPG.",
 "convert image-to-webp":"🖼 ابعت الصورة واكتب في وصفها /convert image-to-webp لتحويلها إلى WebP.",
 "convert ocr":"🔎 ابعت صورة أو PDF واكتب في الوصف /convert ocr لاستخراج الكلام المكتوب.",
