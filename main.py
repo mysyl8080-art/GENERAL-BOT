@@ -61,6 +61,38 @@ async def category(c:CallbackQuery):
 @root.callback_query(F.data.startswith('cmd:'))
 async def command_help(c:CallbackQuery):
     cmd=c.data.split(':',1)[1]
+    # Execute read-only / no-argument actions directly from the menu.
+    try:
+        if cmd=='adhkar':
+            from app.routers_ai_tools import ADHKAR
+            await c.message.answer('ذكر اليوم: '+random.choice(ADHKAR)); await c.answer(); return
+        if cmd=='joke':
+            await c.message.answer(random.choice(JOKES)); await c.answer(); return
+        if cmd=='quote':
+            await c.message.answer(random.choice(QUOTES)); await c.answer(); return
+        if cmd=='prayer':
+            r=await asyncio.to_thread(requests.get,'https://api.aladhan.com/v1/timingsByCity',params={'city':'Cairo','country':'Egypt','method':5},timeout=15)
+            r.raise_for_status(); timings=r.json()['data']['timings']
+            names=[('Fajr','الفجر'),('Sunrise','الشروق'),('Dhuhr','الظهر'),('Asr','العصر'),('Maghrib','المغرب'),('Isha','العشاء')]
+            await c.message.answer('مواقيت الصلاة — القاهرة:\\n'+'\\n'.join(f'{ar}: {timings[key]}' for key,ar in names)); await c.answer(); return
+        if cmd=='tasks':
+            with connection() as db: rows=db.execute('SELECT id,text FROM tasks WHERE chat_id=? AND done=0 ORDER BY id DESC LIMIT 30',(c.message.chat.id,)).fetchall()
+            await c.message.answer(('المهام المفتوحة:\\n'+'\\n'.join(f'#{r["id"]} — {r["text"]}' for r in rows)) if rows else 'لا توجد مهام مفتوحة.'); await c.answer(); return
+        if cmd=='habits':
+            with connection() as db: rows=db.execute('SELECT h.name,COUNT(l.id) n FROM habits h LEFT JOIN habit_logs l ON l.habit_id=h.id AND l.day>=date("now","-6 days") WHERE h.user_id=? GROUP BY h.id',(c.from_user.id,)).fetchall()
+            await c.message.answer(('عاداتك خلال آخر 7 أيام:\\n'+'\\n'.join(f'• {r["name"]}: {r["n"]}/7' for r in rows)) if rows else 'لا توجد عادات. اضغط «إضافة عادة» لإنشاء واحدة.'); await c.answer(); return
+        if cmd=='note':
+            with connection() as db:
+                db.execute('CREATE TABLE IF NOT EXISTS notes(id INTEGER PRIMARY KEY,user_id INTEGER,text TEXT,created_at TEXT)')
+                rows=db.execute('SELECT text FROM notes WHERE user_id=? ORDER BY id DESC LIMIT 10',(c.from_user.id,)).fetchall()
+            await c.message.answer(('آخر ملاحظاتك:\\n'+'\\n'.join('• '+r['text'] for r in rows)) if rows else 'لا توجد ملاحظات محفوظة. لإضافة ملاحظة أرسل /note نص الملاحظة.'); await c.answer(); return
+        if cmd=='favorites':
+            with connection() as db: rows=db.execute('SELECT id,text FROM idea_favorites WHERE user_id=? ORDER BY id DESC LIMIT 20',(c.from_user.id,)).fetchall()
+            await c.message.answer(('أفكارك المفضلة:\\n'+'\\n'.join(f'#{r["id"]}: {r["text"]}' for r in rows)) if rows else 'لا توجد أفكار محفوظة.'); await c.answer(); return
+    except Exception as e:
+        log.exception('Menu quick action failed: %s',cmd)
+        await c.answer('حصل خطأ أثناء تنفيذ الخدمة. حاول مرة أخرى.',show_alert=True)
+        return
     help_map={
       'remind':'/remind بعد ساعتين | نص التذكير','repeat':'/repeat daily 09:00 | نص أو /repeat weekly fri 17:00 | نص','daily_summary':'/daily_summary 20:00 (خاص) أو /daily_summary off','shopping':'/shopping add حليب؛ /shopping list أو /shopping done رقم','meet_poll':'/meet_poll اختروا الموعد | السبت 10:00 | الأحد 15:00','event':'/event 2026-12-01 18:00 | اسم المناسبة؛ /event list','habit_add':'/habit_add اسم العادة، ثم /habit_done اسمها','habits':'/habits لمتابعة العادات','task':'/task نص المهمة أو /task done رقم','tasks':'/tasks','note':'/note نص أو /note list',
       'word':'/word add كلمة | ترجمة، /word list','word_quiz':'/word_quiz','card':'/card add سؤال | إجابة','review':'/review','quiz':'/quiz سؤال ثقافي يومي','antispam':'داخل المجموعة: /antispam on أو off','captcha':'داخل المجموعة: /captcha on أو off (مشرف)','allowdomain':'/allowdomain add example.com','badword':'/badword add كلمة','welcome':'داخل المجموعة: /welcome نص الترحيب، واستخدم {name}','poll':'/poll سؤال | اختيار 1 | اختيار 2','schedule':'/schedule YYYY-MM-DD HH:MM | نص المنشور','points':'/points ترتيب تراكمي','weekly':'/weekly نشاط وأدوار آخر 7 أيام','role':'رد على رسالة عضو: /role اسم_الدور','roles':'/roles','suggest':'/suggest اقتراح (مجهول للمجموعة)','suggestions':'/suggestions للمشرفين','ticket':'خاص: /ticket وصف المشكلة','tickets':'/tickets للمسؤول','ticket_reply':'/ticket_reply رقم | الرد','ticket_close':'/ticket_close رقم','ticket_rate':'/ticket_rate رقم 1-5','channel_stats':'/channel_stats بعد جعل البوت مشرفًا بالقناة',
