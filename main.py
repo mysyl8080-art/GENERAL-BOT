@@ -81,6 +81,29 @@ async def command_help(c:CallbackQuery):
         if cmd=='favorites':
             with connection() as db: rows=db.execute('SELECT id,text FROM idea_favorites WHERE user_id=? ORDER BY id DESC LIMIT 20',(c.from_user.id,)).fetchall()
             await c.message.answer(('أفكارك المفضلة:\n'+'\n'.join(f'#{r["id"]}: {r["text"]}' for r in rows)) if rows else 'لا توجد أفكار محفوظة.'); await c.answer(); return
+        if cmd=='shop':
+            with connection() as db: rows=db.execute('SELECT id,name,price,description,stock FROM products WHERE active=1 ORDER BY id DESC LIMIT 30').fetchall()
+            body=('المتجر — للإضافة للسلة استخدم /cart add رقم:\\n'+'\\n'.join(f'#{r["id"]} {r["name"]} — {r["price"]:.2f} USD'+(f' | المتاح: {r["stock"]}' if r["stock"]>=0 else '') for r in rows)) if rows else 'المتجر فارغ حاليًا.'
+            await c.message.answer(body); await c.answer(); return
+        if cmd=='cart':
+            with connection() as db: rows=db.execute('SELECT p.id,p.name,p.price,ca.quantity FROM cart ca JOIN products p ON p.id=ca.product_id WHERE ca.user_id=?',(c.from_user.id,)).fetchall()
+            body=('سلتك:\\n'+'\\n'.join(f'{r["name"]} × {r["quantity"]} = {r["price"]*r["quantity"]:.2f} USD' for r in rows)+f'\\nالإجمالي: {sum(r["price"]*r["quantity"] for r in rows):.2f} USD\\nلإتمام الطلب استخدم /checkout.') if rows else 'سلتك فارغة. افتح المتجر وأضف منتجًا باستخدام /cart add رقم.'
+            await c.message.answer(body); await c.answer(); return
+        if cmd=='slots':
+            with connection() as db: rows=db.execute("SELECT id,service,slot FROM available_slots WHERE status='open' ORDER BY slot LIMIT 30").fetchall()
+            body=('المواعيد المتاحة:\\n'+'\\n'.join(f'#{r["id"]} {r["service"]} — {r["slot"]}' for r in rows)) if rows else 'لا توجد مواعيد متاحة حاليًا.'
+            await c.message.answer(body); await c.answer(); return
+        if cmd=='loyalty':
+            with connection() as db: row=db.execute('SELECT points FROM loyalty WHERE user_id=?',(c.from_user.id,)).fetchone()
+            await c.message.answer(f'رصيد الولاء: {row["points"] if row else 0} نقطة. كل 100 نقطة تخصم 1 USD؛ للاستبدال استخدم /redeem 100.'); await c.answer(); return
+        if cmd=='roles':
+            with connection() as db: rows=db.execute('SELECT user_id,role FROM group_roles WHERE chat_id=? ORDER BY role,user_id LIMIT 40',(c.message.chat.id,)).fetchall()
+            body=('أدوار المجموعة:\\n'+'\\n'.join(f'• {r["user_id"]}: {r["role"]}' for r in rows)) if rows else 'لم تُعيّن أدوار في هذه المجموعة بعد.'
+            await c.message.answer(body); await c.answer(); return
+        if cmd=='weekly':
+            with connection() as db: rows=db.execute('SELECT user_id,SUM(messages) n FROM group_activity WHERE chat_id=? AND day>=date("now","-6 days") GROUP BY user_id ORDER BY n DESC LIMIT 20',(c.message.chat.id,)).fetchall()
+            body=('نشاط آخر 7 أيام:\\n'+'\\n'.join(f'{i+1}. {r["user_id"]}: {r["n"]} رسالة' for i,r in enumerate(rows))) if rows else 'لا توجد بيانات نشاط للأسبوع الحالي.'
+            await c.message.answer(body); await c.answer(); return
     except Exception as e:
         log.exception('Menu quick action failed: %s',cmd)
         await c.answer('حصل خطأ أثناء تنفيذ الخدمة. حاول مرة أخرى.',show_alert=True)
