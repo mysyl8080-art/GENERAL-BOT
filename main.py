@@ -84,8 +84,10 @@ async def scheduled_worker(bot:Bot):
                     with connection() as db: db.execute('UPDATE scheduled_posts SET sent=1 WHERE id=?',(row['id'],))
             from zoneinfo import ZoneInfo
             local_now=datetime.now(ZoneInfo(settings.timezone)); local_day=local_now.date().isoformat()
+            daily=[]
             if local_now.hour>=9:
-                with connection() as db: daily=db.execute('SELECT user_id,chat_id FROM daily_subscriptions WHERE last_sent<>? OR last_sent=""',(local_day,)).fetchall()
+                with connection() as db:
+                    daily=db.execute('SELECT user_id,chat_id FROM daily_subscriptions WHERE last_sent<>? OR last_sent=""',(local_day,)).fetchall()
             for sub in daily:
                     try:
                         content=(random.choice(JOKES) if datetime.now().timetuple().tm_yday%2 else random.choice(QUOTES))
