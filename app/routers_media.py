@@ -159,6 +159,30 @@ async def pdfmerge_command(m:Message):
 @router.message(F.photo)
 async def photo_tools(m:Message,bot):
     caption=(m.caption or '').strip()
+    # الصور المرسلة كصور Telegram لا تصل إلى F.document؛ ادعم التحويل وOCR هنا أيضًا.
+    if caption.lower().startswith('/convert '):
+        raw=caption.partition(' ')[2].strip()
+        op,*rest=raw.split(' ',1); extra=rest[0].strip() if rest else ''
+        if op.isdigit():
+            option=CONVERT_OPTIONS.get(int(op))
+            if not option: return await m.answer('رقم التحويل غير موجود. اكتب /convert لعرض القائمة.')
+            op=option[0]
+        if not (op=='ocr' or op.startswith('image-') or op=='image-pdf'):
+            return await m.answer('الصورة تقبل تحويلات الصور فقط. اكتب /convert لعرض القائمة.')
+        if m.photo[-1].file_size and m.photo[-1].file_size>settings.max_upload_mb*1024*1024:
+            return await m.answer(f'حجم الصورة أكبر من الحد ({settings.max_upload_mb}MB).')
+        path=os.path.join(settings.temp_dir,f'{m.from_user.id}-{m.photo[-1].file_unique_id}.jpg')
+        try:
+            tg=await bot.get_file(m.photo[-1].file_id); await bot.download_file(tg.file_path,path)
+            outputs=await asyncio.to_thread(convert_file,path,op,extra)
+            for output in outputs:
+                await m.answer_document(FSInputFile(output),caption=f'تم التحويل: {op}')
+        except Exception as e:
+            await m.answer(f'تعذر تحويل الصورة: {str(e)[:700]}')
+        finally:
+            try: os.unlink(path)
+            except OSError: pass
+        return
     if not caption.lower().startswith('/translate') and not caption.lower().startswith('/ocr'):
         return
     if caption.lower().startswith('/translate') and '|' in caption:
