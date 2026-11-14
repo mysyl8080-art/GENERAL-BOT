@@ -48,8 +48,15 @@ async def back_home(c:CallbackQuery): await c.message.edit_text('اختر الق
 
 @root.callback_query(F.data.startswith('cat:'))
 async def category(c:CallbackQuery):
-    idx=int(c.data.split(':',1)[1]); name=list(CATEGORIES)[idx]
-    await c.message.edit_text(f'{name}\nاختر الأمر لمعرفة التعليمات، ثم أرسله في المحادثة.',reply_markup=category_menu(idx)); await c.answer()
+    try:
+        _,raw_idx,raw_page=c.data.split(':',2)
+        idx,page=int(raw_idx),int(raw_page)
+    except (ValueError,AttributeError):
+        idx,page=0,0
+    vals=list(CATEGORIES)
+    if not 0<=idx<len(vals): idx=0
+    name=vals[idx]
+    await c.message.edit_text(f'{name}\\nاختر الخدمة، وستظهر لك طريقة استخدامها.',reply_markup=category_menu(idx,page)); await c.answer()
 
 @root.callback_query(F.data.startswith('cmd:'))
 async def command_help(c:CallbackQuery):
@@ -61,7 +68,20 @@ async def command_help(c:CallbackQuery):
       'summarize':'/summarize رابط مقال أو YouTube','ask':'/ask سؤالك','ask_file':'أرسل مستندًا مع تعليق /ask_file سؤالك','quiz_from_file':'أرسل مستندًا مع تعليق /quiz_from_file','translate':'/translate English | النص','tutor':'/tutor اشرح الدرس','language':'/language English','practice':'/practice جملتك باللغة التي تتعلمها','audio_tasks':'أرسل رسالة صوتية مع تعليق /audio_tasks','idea':'/idea نوع | مجال','favorite':'/favorite نص الفكرة','favorites':'/favorites','post':'/post موضوع | نبرة','transcribe':'أرسل صوتًا مع تعليق /transcribe','speak':'/speak النص',
       'currency':'/currency 100 USD EGP','crypto':'/crypto bitcoin','gold':'/gold (يتطلب GOLD_API_KEY)','prayer':'/prayer القاهرة','adhkar':'/adhkar','qr':'/qr النص','short':'/short https://example.com','price_alert':'/price_alert رابط | سعر مستهدف','convert':'أرسل ملفًا مع تعليق /convert نوع-التحويل','trivia':'/trivia','guess':'/guess رقم بين 1 و20','adventure':'/adventure','joke':'/joke','quote':'/quote','daily_on':'/daily_on','daily_off':'/daily_off','random':'/random movie أو /random restaurant'
     }
-    await c.answer(); await c.message.answer(help_map.get(cmd.split()[0],f'الأمر: /{cmd}'),disable_web_page_preview=True)
+    help_map.update({
+      'ask_file':'أرسل الملف كمرفق، واكتب في التعليق: /ask_file ثم سؤالك. المدعوم PDF وDOCX وTXT وMD وCSV.',
+      'quiz_from_file':'أرسل الملف كمرفق واكتب في التعليق: /quiz_from_file لإنشاء اختبار منه.',
+      'audio_tasks':'أرسل رسالة صوتية واكتب في التعليق /audio_tasks لاستخراج المهام منها.',
+      'convert image-to-jpg':'أرسل الصورة مع التعليق: /convert image-to-jpg',
+      'convert image-to-webp':'أرسل الصورة مع التعليق: /convert image-to-webp',
+      'convert ocr':'أرسل صورة أو PDF مع التعليق: /convert ocr',
+      'convert video-to-mp3':'أرسل الفيديو مع التعليق: /convert video-to-mp3',
+      'convert video-to-gif':'أرسل الفيديو مع التعليق: /convert video-to-gif',
+      'convert video-compress':'أرسل الفيديو مع التعليق: /convert video-compress',
+      'convert video-cut':'أرسل الفيديو مع التعليق: /convert video-cut'
+    })
+    await c.answer()
+    await c.message.answer(help_map.get(cmd,f'استخدم الأمر: /{cmd}'),disable_web_page_preview=True)
 
 async def scheduled_worker(bot:Bot):
     while True:
