@@ -31,17 +31,8 @@ async def menu(m:Message): await m.answer('اختر القسم:',reply_markup=ma
 
 @root.message(Command('help'))
 async def help_cmd(m:Message):
-    text='''الأوامر المتاحة:
-الإنتاجية: /remind /repeat /daily_summary /shopping /meet_poll /event /habit_add /habit_done /habits /task /tasks /note
-التعلّم: /word /word_quiz /card /review /quiz /leaderboard
-المجموعات والقنوات: /antispam /captcha /allowdomain /badword /welcome /poll /meet_poll /schedule /points /weekly /role /suggest /ticket /channel_stats
-الأعمال: /book /slot_add /slots /book_slot /product /stock /shop /cart /checkout /coupon /coupon_add /order /loyalty /redeem /rate_order /faq /feedback /requests
-الذكاء الاصطناعي: /ask /ask_file /quiz_from_file /language /practice /audio_tasks /idea /favorite /post /summarize /translate /tutor /transcribe /speak
-الأدوات: /currency /crypto /gold /prayer /adhkar /qr /short /price_alert /convert
-التسلية: /trivia /guess /adventure /joke /quote /daily_on /daily_off /random
-
-استخدم /menu للواجهة التفاعلية. كل التحويلات في /convert.'''
-    await m.answer(text)
+    from app.help_text import HELP_OVERVIEW
+    await m.answer(HELP_OVERVIEW, disable_web_page_preview=True)
 
 @root.callback_query(F.data=='home')
 async def back_home(c:CallbackQuery): await c.message.edit_text('اختر القسم:',reply_markup=main_menu()); await c.answer()
@@ -61,6 +52,12 @@ async def category(c:CallbackQuery):
 @root.callback_query(F.data.startswith('cmd:'))
 async def command_help(c:CallbackQuery):
     cmd=c.data.split(':',1)[1]
+    from app.help_text import COMMAND_HELP
+    description=COMMAND_HELP.get(cmd)
+    if description:
+        await c.answer()
+        await c.message.answer(description,disable_web_page_preview=True)
+        return
     # Execute read-only / no-argument actions directly from the menu.
     try:
         if cmd=='adhkar':
