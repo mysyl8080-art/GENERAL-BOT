@@ -47,7 +47,7 @@ async def category(c:CallbackQuery):
     vals=list(CATEGORIES)
     if not 0<=idx<len(vals): idx=0
     name=vals[idx]
-    await c.message.edit_text(f'{name}\\nاختر الخدمة، وستظهر لك طريقة استخدامها.',reply_markup=category_menu(idx,page)); await c.answer()
+    await c.message.edit_text(f'{name}\nاختر الخدمة، وستظهر لك طريقة استخدامها.',reply_markup=category_menu(idx,page)); await c.answer()
 
 @root.callback_query(F.data.startswith('cmd:'))
 async def command_help(c:CallbackQuery):
@@ -66,21 +66,21 @@ async def command_help(c:CallbackQuery):
             r=await asyncio.to_thread(requests.get,'https://api.aladhan.com/v1/timingsByCity',params={'city':'Cairo','country':'Egypt','method':5},timeout=15)
             r.raise_for_status(); timings=r.json()['data']['timings']
             names=[('Fajr','الفجر'),('Sunrise','الشروق'),('Dhuhr','الظهر'),('Asr','العصر'),('Maghrib','المغرب'),('Isha','العشاء')]
-            await c.message.answer('مواقيت الصلاة — القاهرة:\\n'+'\\n'.join(f'{ar}: {timings[key]}' for key,ar in names)); await c.answer(); return
+            await c.message.answer('مواقيت الصلاة — القاهرة:\n'+'\n'.join(f'{ar}: {timings[key]}' for key,ar in names)); await c.answer(); return
         if cmd=='tasks':
             with connection() as db: rows=db.execute('SELECT id,text FROM tasks WHERE chat_id=? AND done=0 ORDER BY id DESC LIMIT 30',(c.message.chat.id,)).fetchall()
-            await c.message.answer(('المهام المفتوحة:\\n'+'\\n'.join(f'#{r["id"]} — {r["text"]}' for r in rows)) if rows else 'لا توجد مهام مفتوحة.'); await c.answer(); return
+            await c.message.answer(('المهام المفتوحة:\n'+'\n'.join(f'#{r["id"]} — {r["text"]}' for r in rows)) if rows else 'لا توجد مهام مفتوحة.'); await c.answer(); return
         if cmd=='habits':
             with connection() as db: rows=db.execute('SELECT h.name,COUNT(l.id) n FROM habits h LEFT JOIN habit_logs l ON l.habit_id=h.id AND l.day>=date("now","-6 days") WHERE h.user_id=? GROUP BY h.id',(c.from_user.id,)).fetchall()
-            await c.message.answer(('عاداتك خلال آخر 7 أيام:\\n'+'\\n'.join(f'• {r["name"]}: {r["n"]}/7' for r in rows)) if rows else 'لا توجد عادات. اضغط «إضافة عادة» لإنشاء واحدة.'); await c.answer(); return
+            await c.message.answer(('عاداتك خلال آخر 7 أيام:\n'+'\n'.join(f'• {r["name"]}: {r["n"]}/7' for r in rows)) if rows else 'لا توجد عادات. اضغط «إضافة عادة» لإنشاء واحدة.'); await c.answer(); return
         if cmd=='note':
             with connection() as db:
                 db.execute('CREATE TABLE IF NOT EXISTS notes(id INTEGER PRIMARY KEY,user_id INTEGER,text TEXT,created_at TEXT)')
                 rows=db.execute('SELECT text FROM notes WHERE user_id=? ORDER BY id DESC LIMIT 10',(c.from_user.id,)).fetchall()
-            await c.message.answer(('آخر ملاحظاتك:\\n'+'\\n'.join('• '+r['text'] for r in rows)) if rows else 'لا توجد ملاحظات محفوظة. لإضافة ملاحظة أرسل /note نص الملاحظة.'); await c.answer(); return
+            await c.message.answer(('آخر ملاحظاتك:\n'+'\n'.join('• '+r['text'] for r in rows)) if rows else 'لا توجد ملاحظات محفوظة. لإضافة ملاحظة أرسل /note نص الملاحظة.'); await c.answer(); return
         if cmd=='favorites':
             with connection() as db: rows=db.execute('SELECT id,text FROM idea_favorites WHERE user_id=? ORDER BY id DESC LIMIT 20',(c.from_user.id,)).fetchall()
-            await c.message.answer(('أفكارك المفضلة:\\n'+'\\n'.join(f'#{r["id"]}: {r["text"]}' for r in rows)) if rows else 'لا توجد أفكار محفوظة.'); await c.answer(); return
+            await c.message.answer(('أفكارك المفضلة:\n'+'\n'.join(f'#{r["id"]}: {r["text"]}' for r in rows)) if rows else 'لا توجد أفكار محفوظة.'); await c.answer(); return
     except Exception as e:
         log.exception('Menu quick action failed: %s',cmd)
         await c.answer('حصل خطأ أثناء تنفيذ الخدمة. حاول مرة أخرى.',show_alert=True)
